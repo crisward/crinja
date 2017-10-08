@@ -180,4 +180,37 @@ describe Crinja::Tag::For do
     render(%({% for item in seq %}{{ x }}{% set x = item %}{{ x }}{% endfor %}), bindings).should eq "010203"
     render(%({% set x = 9 %}{% for item in seq %}{{ x }}{% set x = item %}{{ x }}{% endfor %}), bindings).should eq "919293"
   end
+
+  it "loop speed" do 
+    items = [{"name" => "this", "location" => "that"}] * 1000
+    template1 = %(
+      {% for item in items -%}
+        {% if item.name=="bob" %}
+          <p>First {{item.name}}</p>
+        {% else %}
+          <p>Other {{item.name}}</p>
+        {% endif %}
+      {%- endfor %}
+    )
+    template2 = %(
+      {% for item in items -%}
+        {% if loop.first %}
+          <p>First {{item.name}}</p>
+        {% else %}
+          <p>Other {{item.name}}</p>
+        {% endif %}
+      {%- endfor %}
+    )
+    before = Time.now
+    render(template1,{"items"=>items})
+    time1 = Time.now-before
+
+    before = Time.now
+    render(template2,{"items"=>items})
+    time2 = Time.now-before
+
+    p time1,time2
+    time1.should be_close(time2,100.milliseconds)
+  end
+
 end
